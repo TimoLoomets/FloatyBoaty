@@ -29,9 +29,14 @@ namespace map_editor
   {
     ensure_file_exists(track_file);
     visualizer = std::make_unique<visualizer::Visualizer>(track_file);
-    visualizer.get()->add_mouse_callback(mouse_callback, this);
-    visualizer.get()->load_track(track_file);
-    visualizer.get()->display();
+    visualizer->add_mouse_callback(mouse_callback, this);
+    visualizer->load_track(track_file);
+    visualizer->display();
+    hover_point->color = cv::Scalar(125, 125, 125);
+    hover_point->radius = 3;
+    visualizer->points.push_back(hover_point);
+    std::cout << "points: " << visualizer->points.size() << "\n";
+    
     cv::waitKey();
   }
 
@@ -39,8 +44,23 @@ namespace map_editor
   {
   }
 
+  void Editor::hover_at(cv::Point location)
+  {
+    std::cout << "Hover loc: " << location << "\n";
+    std::pair<double, double> world_loc = visualizer->image_to_world(location);
+    std::cout << "World loc: " << world_loc.first << " " << world_loc.second << "\n";
+    world_loc.first = round(world_loc.first / grid_size) * grid_size;
+    world_loc.second = round(world_loc.second / grid_size) * grid_size;
+    std::cout << "Rounded world loc: " << world_loc.first << " " << world_loc.second << "\n";
+    hover_point->location = visualizer->world_to_image(world_loc);
+    std::cout << "Image loc: " << hover_point->location << "\n";
+    visualizer->display();
+    std::cout << "\n";
+  }
+
   void mouse_callback(int event, int x, int y, int flags, void* userdata)
   {
+    Editor* editor = static_cast<Editor*>(userdata);
     if (event == cv::EVENT_LBUTTONDOWN)
     {
       std::cout << "Left button of the mouse is clicked - position (" << x << ", " << y << ")" << std::endl;
@@ -55,11 +75,7 @@ namespace map_editor
     }
     else if (event == cv::EVENT_MOUSEMOVE)
     {
-      std::cout << "Mouse move over the window - position (" << x << ", " << y << ")" << std::endl;
-    }
-    else if (event == cv::EVENT_MOUSEMOVE)
-    {
-      std::cout << "Mouse move over the window - position (" << x << ", " << y << ")" << std::endl;
+      editor->hover_at(cv::Point(x, y));
     }
   }
 

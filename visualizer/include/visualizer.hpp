@@ -1,6 +1,7 @@
 #pragma once
 
 #include <string>
+#include <iostream>
 
 #include <opencv2/highgui.hpp>
 #include <opencv2/imgproc.hpp>
@@ -9,6 +10,13 @@
 
 namespace visualizer
 {
+  struct point
+  {
+    cv::Point location;
+    cv::Scalar color;
+    int radius;
+  };
+
   class Visualizer
   {
   private:
@@ -23,26 +31,20 @@ namespace visualizer
 
     void draw();
     void draw_track();
-
-    cv::Point world_to_image(std::pair<double, double> point);
+    void draw_points();
 
   public:
     Visualizer(std::string window_name, int pixels_per_meter = 50);
     ~Visualizer();
 
-    struct point
-    {
-      cv::Point location;
-      cv::Scalar color;
-      int radius;
-    };
-    
     std::vector<std::shared_ptr<point>> points;
     std::pair<double, double> track_size = { 14, 14 };
     std::pair<double, double> zero_offset = { 7, 7 };
 
     void display();
     void load_track(std::string track_file);
-    void add_mouse_callback(cv::MouseCallback callback, void * user_data);
+    void add_mouse_callback(cv::MouseCallback callback, void* user_data);
+    std::pair<double, double> image_to_world(cv::Point point);
+    cv::Point world_to_image(std::pair<double, double> point);
   };
 }  // namespace visualizer

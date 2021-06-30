@@ -15,6 +15,7 @@ namespace visualizer
 
   void Visualizer::display()
   {
+    std::cout << "displaying\n";
     cv::namedWindow(window_name);
     draw();
     cv::imshow(window_name, image);
@@ -32,10 +33,12 @@ namespace visualizer
 
   void Visualizer::draw()
   {
+    std::cout << "drawing\n";
     image = cv::Mat(cv::Size(static_cast<int>(track_size.first * pixels_per_meter),
                              static_cast<int>(track_size.second * pixels_per_meter)),
                     CV_8UC3, cv::Scalar(0, 0, 0));
     draw_track();
+    draw_points();
   }
 
   void Visualizer::draw_track()
@@ -46,13 +49,29 @@ namespace visualizer
     }
   }
 
+  void Visualizer::draw_points()
+  {
+    std::cout << "drawing points: " << points.size() << "\n";
+    for (auto point : points)
+    {
+      std::cout << "drawing point: " << point->location << " " << point->radius << " " << point->color << "\n";
+      cv::circle(image, point->location, point->radius, point->color, -1);
+    }
+  }
+
   cv::Point Visualizer::world_to_image(std::pair<double, double> point)
   {
     return { static_cast<int>((point.first + zero_offset.first) * pixels_per_meter),
              static_cast<int>((track_size.second - point.second - zero_offset.second) * pixels_per_meter) };
   }
 
-  void Visualizer::add_mouse_callback(cv::MouseCallback callback, void * user_data)
+  std::pair<double, double> Visualizer::image_to_world(cv::Point point)
+  {
+    return std::make_pair(point.x / static_cast<double>(pixels_per_meter) - zero_offset.first,
+                          track_size.second - point.y / static_cast<double>(pixels_per_meter) - zero_offset.second);
+  }
+
+  void Visualizer::add_mouse_callback(cv::MouseCallback callback, void* user_data)
   {
     cv::setMouseCallback(window_name, callback, user_data);
   }
