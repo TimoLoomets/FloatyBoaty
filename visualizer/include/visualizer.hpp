@@ -30,10 +30,19 @@ namespace visualizer
     Visualizer(std::string window_name, int pixels_per_meter = 50);
     ~Visualizer();
 
+    struct point
+    {
+      cv::Point location;
+      cv::Scalar color;
+      int radius;
+    };
+    
+    std::vector<std::shared_ptr<point>> points;
     std::pair<double, double> track_size = { 14, 14 };
     std::pair<double, double> zero_offset = { 7, 7 };
 
     void display();
     void load_track(std::string track_file);
+    void add_mouse_callback(cv::MouseCallback callback, void * user_data);
   };
 }  // namespace visualizer

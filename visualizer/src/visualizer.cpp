@@ -5,6 +5,7 @@ namespace visualizer
   Visualizer::Visualizer(std::string window_name, int pixels_per_meter)
     : window_name(window_name), pixels_per_meter(pixels_per_meter)
   {
+    cv::namedWindow(window_name, 1);
   }
 
   Visualizer::~Visualizer()
@@ -50,4 +51,10 @@ namespace visualizer
     return { static_cast<int>((point.first + zero_offset.first) * pixels_per_meter),
              static_cast<int>((track_size.second - point.second - zero_offset.second) * pixels_per_meter) };
   }
+
+  void Visualizer::add_mouse_callback(cv::MouseCallback callback, void * user_data)
+  {
+    cv::setMouseCallback(window_name, callback, user_data);
+  }
+
 }  // namespace visualizer
