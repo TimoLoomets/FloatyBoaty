@@ -1,0 +1,9 @@
+# IDE configuration directory
+.vscode/
+
+# Build directory
+build/
+
+# Export directory
+lib/
+bin/
