@@ -25,18 +25,19 @@ int main(int argc, char** argv)
 
 namespace map_editor
 {
-  Editor::Editor(std::string track_file)
+  Editor::Editor(std::string track_file) : track_file(track_file)
   {
     ensure_file_exists(track_file);
+
     visualizer = std::make_unique<visualizer::Visualizer>(track_file);
     visualizer->add_mouse_callback(mouse_callback, this);
     visualizer->load_track(track_file);
     visualizer->display();
+
     hover_point->color = cv::Scalar(125, 125, 125);
     hover_point->radius = 3;
     visualizer->points.push_back(hover_point);
-    std::cout << "points: " << visualizer->points.size() << "\n";
-    
+
     cv::waitKey();
   }
 
@@ -46,16 +47,39 @@ namespace map_editor
 
   void Editor::hover_at(cv::Point location)
   {
-    std::cout << "Hover loc: " << location << "\n";
     std::pair<double, double> world_loc = visualizer->image_to_world(location);
-    std::cout << "World loc: " << world_loc.first << " " << world_loc.second << "\n";
     world_loc.first = round(world_loc.first / grid_size) * grid_size;
     world_loc.second = round(world_loc.second / grid_size) * grid_size;
-    std::cout << "Rounded world loc: " << world_loc.first << " " << world_loc.second << "\n";
-    hover_point->location = visualizer->world_to_image(world_loc);
-    std::cout << "Image loc: " << hover_point->location << "\n";
+    hover_point->location = world_loc;
     visualizer->display();
-    std::cout << "\n";
+  }
+
+  void Editor::left_click_at(cv::Point location)
+  {
+    if (first_edge_point)
+    {
+      add_edge(first_edge_point->location, hover_point->location);
+      visualizer->points.erase(std::remove(visualizer->points.begin(), visualizer->points.end(), first_edge_point),
+                               visualizer->points.end());
+      first_edge_point.reset();
+      visualizer->load_track(track_file);
+      visualizer->display();
+    }
+    else
+    {
+      first_edge_point = std::make_shared<visualizer::point>(hover_point->location, cv::Scalar(255, 0, 0), 3);
+      visualizer->points.push_back(first_edge_point);
+    }
+  }
+
+  void Editor::add_edge(std::pair<double, double> start_point, std::pair<double, double> end_point)
+  {
+    std::vector<std::vector<double>> edge = { { start_point.first, start_point.second },
+                                              { end_point.first, end_point.second } };
+    YAML::Node track = YAML::LoadFile(track_file);
+    track.push_back(edge);
+    std::ofstream fout(track_file);
+    fout << track;
   }
 
   void mouse_callback(int event, int x, int y, int flags, void* userdata)
@@ -63,7 +87,7 @@ namespace map_editor
     Editor* editor = static_cast<Editor*>(userdata);
     if (event == cv::EVENT_LBUTTONDOWN)
     {
-      std::cout << "Left button of the mouse is clicked - position (" << x << ", " << y << ")" << std::endl;
+      editor->left_click_at(cv::Point(x, y));
     }
     else if (event == cv::EVENT_RBUTTONDOWN)
     {
@@ -81,6 +105,12 @@ namespace map_editor
 
   void ensure_file_exists(const std::string name)
   {
-    std::ofstream file(name);
+    std::ifstream f(name);
+
+    if (!f.good())
+    {
+      f.close();
+      std::ofstream file(name);
+    }
   }
 }  // namespace map_editor

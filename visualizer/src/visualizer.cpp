@@ -15,7 +15,6 @@ namespace visualizer
 
   void Visualizer::display()
   {
-    std::cout << "displaying\n";
     cv::namedWindow(window_name);
     draw();
     cv::imshow(window_name, image);
@@ -33,7 +32,6 @@ namespace visualizer
 
   void Visualizer::draw()
   {
-    std::cout << "drawing\n";
     image = cv::Mat(cv::Size(static_cast<int>(track_size.first * pixels_per_meter),
                              static_cast<int>(track_size.second * pixels_per_meter)),
                     CV_8UC3, cv::Scalar(0, 0, 0));
@@ -51,11 +49,9 @@ namespace visualizer
 
   void Visualizer::draw_points()
   {
-    std::cout << "drawing points: " << points.size() << "\n";
     for (auto point : points)
     {
-      std::cout << "drawing point: " << point->location << " " << point->radius << " " << point->color << "\n";
-      cv::circle(image, point->location, point->radius, point->color, -1);
+      cv::circle(image, world_to_image(point->location), point->radius, point->color, -1);
     }
   }
 

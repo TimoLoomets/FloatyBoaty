@@ -12,9 +12,18 @@ namespace visualizer
 {
   struct point
   {
-    cv::Point location;
+    std::pair<double, double> location;
     cv::Scalar color;
     int radius;
+
+    point()
+    {
+    }
+
+    point(std::pair<double, double> location, cv::Scalar color, int radius)
+      : location(location), color(color), radius(radius)
+    {
+    }
   };
 
   class Visualizer
