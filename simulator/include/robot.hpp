@@ -22,13 +22,14 @@ private:
 
   struct FrictionPoint
   {
-    FrictionPoint(std::pair<double, double> location, std::pair<double, double> coefficients)
-      : location(location), coefficients(coefficients)
+    FrictionPoint(std::pair<double, double> location, std::pair<double, double> coefficients, double reaction_force_multiplier)
+      : location(location), coefficients(coefficients), reaction_force_multiplier(reaction_force_multiplier)
     {
     }
 
     std::pair<double, double> location;
     std::pair<double, double> coefficients;
+    double reaction_force_multiplier;
   };
 
   struct CenterOfGravity
@@ -57,4 +58,5 @@ public:
 
   void apply_motor_force(std::string motor, double force);
   void apply_force(std::pair<double, double> location, std::pair<double, double> force);
+  void step(double time);
 };
