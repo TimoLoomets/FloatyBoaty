@@ -1,0 +1,32 @@
+center_of_gravity:
+  location:
+    - 0.1
+    - 0.15
+  mass: 0.5
+  moment_of_inertia: 0.0025
+motors:
+  left_motor:
+    location:
+      - 0.05
+      - 0.05
+    heading: 0.0
+  right_motor:
+    location:
+      - 0.15
+      - 0.05
+    heading: 0.0
+friction_points:
+  rear_friction:
+    location:
+      - 0.1
+      - 0.05
+    coefficients:
+      - 0.05
+      - 0.05
+  front_friction:
+    location:
+      - 0.1
+      - 0.25
+    coefficients:
+      - 0.05
+      - 0.05

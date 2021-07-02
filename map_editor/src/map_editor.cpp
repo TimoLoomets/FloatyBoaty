@@ -11,7 +11,7 @@ int main(int argc, char** argv)
   }
   for (int i = 0; i < all_args.size(); i++)
   {
-    if (all_args[i] == "--track_file")
+    if (all_args[i] == "--track-file")
     {
       if (i + 1 >= all_args.size())
         return -1;
@@ -21,6 +21,7 @@ int main(int argc, char** argv)
   }
 
   map_editor::Editor editor(track_file);
+  return 0;
 }
 
 namespace map_editor

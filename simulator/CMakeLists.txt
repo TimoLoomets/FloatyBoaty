@@ -1,4 +1,4 @@
-project(MapEditor)
+project(Simulator)
 
 file(GLOB_RECURSE MAP_EDITOR ${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp ${CMAKE_CURRENT_SOURCE_DIR}/include/*.hpp)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include)
