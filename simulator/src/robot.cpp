@@ -20,18 +20,9 @@ Robot::Robot(std::string robot_file)
     }
   }
 
-  if (robot["friction_points"])
-  {
-    for (YAML::const_iterator it = robot["friction_points"].begin(); it != robot["friction_points"].end(); ++it)
-    {
-      FrictionPoint friction_point(
-          std::make_pair(it->second["location"][0].as<double>() - center_of_gravity.location.first,
-                         it->second["location"][1].as<double>() - center_of_gravity.location.second),
-          std::make_pair(it->second["coefficients"][0].as<double>(), it->second["coefficients"][1].as<double>()),
-          9.81 / robot["friction_points"].size());
-      friction_points.insert({ it->first.as<std::string>(), friction_point });
-    }
-  }
+  friction_coefficient.linear = std::make_pair(robot["friction_coefficients"]["linear"][0].as<double>(),
+                                               robot["friction_coefficients"]["linear"][1].as<double>());
+  friction_coefficient.angular = robot["friction_coefficients"]["angular"].as<double>();
 
   center_of_gravity.location = std::make_pair(0, 0);
 }
@@ -60,7 +51,45 @@ void Robot::apply_force(std::pair<double, double> location, std::pair<double, do
   acceleration.angular += angle_sin * force_len * location_len / center_of_gravity.moment_of_inertia;
 }
 
+double Robot::get_change(double time, double& velocity, const double& acceleration, const double& deccelarition)
+{
+  double distance_traveled = 0;
+  double velocity_change_rate;
+  if (velocity != 0)
+  {
+    velocity_change_rate = acceleration + get_sign(velocity) * (-1) * deccelarition;
+    if (get_sign(velocity) * get_sign(velocity_change_rate) == -1 && velocity_change_rate != 0)
+    {
+      const double time_to_zero = velocity / velocity_change_rate;
+      if (time_to_zero <= time)
+      {
+        distance_traveled += velocity_change_rate * time * time / 2 + velocity * time;
+        time -= time_to_zero;
+        velocity = 0;
+      }
+    }
+  }
+
+  if (velocity == 0)
+  {
+    velocity_change_rate = acceleration - get_sign(acceleration) * deccelarition;
+  }
+  distance_traveled += velocity_change_rate * time * time / 2 + velocity * time;
+  velocity += velocity_change_rate * time;
+  
+  return distance_traveled;
+}
+
 void Robot::step(double time)
 {
-  
+  const double x_coefficient = friction_coefficient.linear.first * cos(position.angular) -
+                               friction_coefficient.linear.second * sin(position.angular);
+  const double y_coefficient = friction_coefficient.linear.first * sin(position.angular) +
+                               friction_coefficient.linear.second * cos(position.angular);
+  position.linear.first +=
+      get_change(time, velocity.linear.first, acceleration.linear.first, x_coefficient * center_of_gravity.mass * G);
+  position.linear.second +=
+      get_change(time, velocity.linear.second, acceleration.linear.second, y_coefficient * center_of_gravity.mass * G);
+  position.angular += get_change(time, velocity.angular, acceleration.angular,
+                                 friction_coefficient.angular * center_of_gravity.moment_of_inertia);
 }

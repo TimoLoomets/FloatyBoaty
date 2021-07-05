@@ -37,6 +37,7 @@ namespace visualizer
                     CV_8UC3, cv::Scalar(0, 0, 0));
     draw_track();
     draw_points();
+    draw_polygons();
   }
 
   void Visualizer::draw_track()
@@ -54,6 +55,16 @@ namespace visualizer
       cv::circle(image, world_to_image(point->location), point->radius, point->color, -1);
     }
   }
+
+    void Visualizer::draw_polygons(){
+      for (auto polygon : polygons){
+        std::vector<cv::Point> polygon_points;
+        for(auto point : polygon->points){
+          polygon_points.push_back(world_to_image(point));
+        }
+        cv::fillPoly(image, polygon_points, polygon->color);
+      }
+    }
 
   cv::Point Visualizer::world_to_image(std::pair<double, double> point)
   {

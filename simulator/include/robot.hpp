@@ -3,6 +3,7 @@
 
 #include <yaml-cpp/yaml.h>
 
+#define G 9.81
 class Robot
 {
 private:
@@ -20,18 +21,6 @@ private:
     double heading;
   };
 
-  struct FrictionPoint
-  {
-    FrictionPoint(std::pair<double, double> location, std::pair<double, double> coefficients, double reaction_force_multiplier)
-      : location(location), coefficients(coefficients), reaction_force_multiplier(reaction_force_multiplier)
-    {
-    }
-
-    std::pair<double, double> location;
-    std::pair<double, double> coefficients;
-    double reaction_force_multiplier;
-  };
-
   struct CenterOfGravity
   {
     std::pair<double, double> location;
@@ -39,11 +28,29 @@ private:
     double moment_of_inertia;
   };
 
-  struct State
+  struct AxisComponents
   {
     std::pair<double, double> linear;
     double angular;
   };
+
+  int get_sign(double number)
+  {
+    if (number == 0)
+    {
+      return 0;
+    }
+    else if (number > 0)
+    {
+      return 1;
+    }
+    else
+    {
+      return -1;
+    }
+  }
+
+  double get_change(double time, double& velocity, const double& acceleration, const double& deccelarition);
 
 public:
   Robot(std::string robot_file);
@@ -51,10 +58,10 @@ public:
 
   CenterOfGravity center_of_gravity;
   std::map<std::string, Motor> motors;
-  std::map<std::string, FrictionPoint> friction_points;
-  State position;
-  State velocity;
-  State acceleration;
+  AxisComponents friction_coefficient;
+  AxisComponents position;
+  AxisComponents velocity;
+  AxisComponents acceleration;
 
   void apply_motor_force(std::string motor, double force);
   void apply_force(std::pair<double, double> location, std::pair<double, double> force);

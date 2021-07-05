@@ -10,18 +10,32 @@
 
 namespace visualizer
 {
-  struct point
+  struct Point
   {
     std::pair<double, double> location;
     cv::Scalar color;
     int radius;
 
-    point()
+    Point()
     {
     }
 
-    point(std::pair<double, double> location, cv::Scalar color, int radius)
+    Point(std::pair<double, double> location, cv::Scalar color, int radius)
       : location(location), color(color), radius(radius)
+    {
+    }
+  };
+
+  struct Polygon
+  {
+    std::vector<std::pair<double, double>> points;
+    cv::Scalar color;
+
+    Polygon()
+    {
+    }
+
+    Polygon(std::vector<std::pair<double, double>> points, cv::Scalar color) : points(points), color(color)
     {
     }
   };
@@ -41,12 +55,14 @@ namespace visualizer
     void draw();
     void draw_track();
     void draw_points();
+    void draw_polygons();
 
   public:
     Visualizer(std::string window_name, int pixels_per_meter = 50);
     ~Visualizer();
 
-    std::vector<std::shared_ptr<point>> points;
+    std::vector<std::shared_ptr<Point>> points;
+    std::vector<std::shared_ptr<Polygon>> polygons;
     std::pair<double, double> track_size = { 14, 14 };
     std::pair<double, double> zero_offset = { 7, 7 };
 

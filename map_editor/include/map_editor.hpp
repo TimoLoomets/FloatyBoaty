@@ -13,8 +13,8 @@ namespace map_editor
     double grid_size = 0.1;
     std::string track_file;
     std::unique_ptr<visualizer::Visualizer> visualizer;
-    std::shared_ptr<visualizer::point> hover_point = std::make_shared<visualizer::point>();
-    std::shared_ptr<visualizer::point> first_edge_point;
+    std::shared_ptr<visualizer::Point> hover_point = std::make_shared<visualizer::Point>();
+    std::shared_ptr<visualizer::Point> first_edge_point;
 
     void add_edge(std::pair<double, double> start_point, std::pair<double, double> end_point);
   public:

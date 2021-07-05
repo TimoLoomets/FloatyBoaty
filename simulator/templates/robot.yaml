@@ -15,18 +15,8 @@ motors:
       - 0.15
       - 0.05
     heading: 0.0
-friction_points:
-  rear_friction:
-    location:
-      - 0.1
-      - 0.05
-    coefficients:
-      - 0.05
-      - 0.05
-  front_friction:
-    location:
-      - 0.1
-      - 0.25
-    coefficients:
-      - 0.05
-      - 0.05
+friction_coefficients:
+  linear:
+    - 0.05
+    - 0.05
+  angular: 0.05

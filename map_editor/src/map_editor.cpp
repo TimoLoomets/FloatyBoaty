@@ -68,7 +68,7 @@ namespace map_editor
     }
     else
     {
-      first_edge_point = std::make_shared<visualizer::point>(hover_point->location, cv::Scalar(255, 0, 0), 3);
+      first_edge_point = std::make_shared<visualizer::Point>(hover_point->location, cv::Scalar(255, 0, 0), 3);
       visualizer->points.push_back(first_edge_point);
     }
   }
