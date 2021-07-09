@@ -24,6 +24,16 @@ Robot::Robot(std::string robot_file)
                                                robot["friction_coefficients"]["linear"][1].as<double>());
   friction_coefficient.angular = robot["friction_coefficients"]["angular"].as<double>();
 
+  if (robot["boundary"])
+  {
+    for (std::size_t i = 0; i < robot["boundary"].size(); i++)
+    {
+      boundary_points.push_back(
+          std::make_pair(robot["boundary"][i][0].as<double>() - center_of_gravity.location.first,
+                         robot["boundary"][i][1].as<double>() - center_of_gravity.location.second));
+    }
+  }
+
   center_of_gravity.location = std::make_pair(0, 0);
 }
 
@@ -76,7 +86,7 @@ double Robot::get_change(double time, double& velocity, const double& accelerati
   }
   distance_traveled += velocity_change_rate * time * time / 2 + velocity * time;
   velocity += velocity_change_rate * time;
-  
+
   return distance_traveled;
 }
 
@@ -92,4 +102,51 @@ void Robot::step(double time)
       get_change(time, velocity.linear.second, acceleration.linear.second, y_coefficient * center_of_gravity.mass * G);
   position.angular += get_change(time, velocity.angular, acceleration.angular,
                                  friction_coefficient.angular * center_of_gravity.moment_of_inertia);
+}
+
+std::pair<double, double> Robot::local_to_global(std::pair<double, double> point)
+{
+  point = std::make_pair(point.first * cos(position.angular) - point.second * sin(position.angular),
+                         point.first * sin(position.angular) + point.second * cos(position.angular));
+
+  point.first = point.first + position.linear.first;
+  point.second = point.second + position.linear.second;
+
+  return point;
+}
+
+void Robot::update_visualisation()
+{
+  visualisation.boundary->color = cv::Scalar(255, 0, 255);
+  visualisation.boundary->points = {};
+  for (auto const& point : boundary_points)
+  {
+    visualisation.boundary->points.push_back(local_to_global(point));
+  }
+
+  for (auto const& motor : motors)
+  {
+    if (visualisation.motors.find(motor.first) == visualisation.motors.end())
+    {
+      visualisation.motors[motor.first] =
+          std::make_shared<visualizer::Point>(local_to_global(motor.second.location), cv::Scalar(0, 255, 0), 2);
+    }
+    visualisation.motors[motor.first]->location = local_to_global(motor.second.location);
+  }
+
+  visualisation.cog->color = cv::Scalar(0, 255, 255);
+  visualisation.cog->radius = 2;
+  visualisation.cog->location = local_to_global(center_of_gravity.location);
+}
+
+void Robot::add_to_visualizer(visualizer::Visualizer& visualizer)
+{
+  visualizer.points.push_back(visualisation.cog);
+
+  for (auto const& motor : visualisation.motors)
+  {
+    visualizer.points.push_back(motor.second);
+  }
+
+  visualizer.polygons.push_back(visualisation.boundary);
 }

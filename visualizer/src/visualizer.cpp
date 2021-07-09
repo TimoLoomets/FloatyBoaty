@@ -36,8 +36,8 @@ namespace visualizer
                              static_cast<int>(track_size.second * pixels_per_meter)),
                     CV_8UC3, cv::Scalar(0, 0, 0));
     draw_track();
-    draw_points();
     draw_polygons();
+    draw_points();
   }
 
   void Visualizer::draw_track()
@@ -62,7 +62,9 @@ namespace visualizer
         for(auto point : polygon->points){
           polygon_points.push_back(world_to_image(point));
         }
-        cv::fillPoly(image, polygon_points, polygon->color);
+        std::vector<std::vector<cv::Point>> polygons;
+        polygons.push_back(polygon_points);
+        cv::fillPoly(image, polygons, polygon->color);
       }
     }
 
