@@ -2,6 +2,7 @@
 
 #include <string>
 #include <iostream>
+#include <limits>
 
 #include <opencv2/highgui.hpp>
 #include <opencv2/imgproc.hpp>
@@ -68,6 +69,7 @@ namespace visualizer
 
     void display();
     void load_track(std::string track_file);
+    void autoscale_to_track();
     void add_mouse_callback(cv::MouseCallback callback, void* user_data);
     std::pair<double, double> image_to_world(cv::Point point);
     cv::Point world_to_image(std::pair<double, double> point);

@@ -56,17 +56,45 @@ namespace visualizer
     }
   }
 
-    void Visualizer::draw_polygons(){
-      for (auto polygon : polygons){
-        std::vector<cv::Point> polygon_points;
-        for(auto point : polygon->points){
-          polygon_points.push_back(world_to_image(point));
-        }
-        std::vector<std::vector<cv::Point>> polygons;
-        polygons.push_back(polygon_points);
-        cv::fillPoly(image, polygons, polygon->color);
+  void Visualizer::draw_polygons()
+  {
+    for (auto polygon : polygons)
+    {
+      std::vector<cv::Point> polygon_points;
+      for (auto point : polygon->points)
+      {
+        polygon_points.push_back(world_to_image(point));
       }
+      std::vector<std::vector<cv::Point>> polygons;
+      polygons.push_back(polygon_points);
+      cv::fillPoly(image, polygons, polygon->color);
     }
+  }
+
+  void Visualizer::autoscale_to_track()
+  {
+    double min_x = std::numeric_limits<double>::max();
+    double min_y = std::numeric_limits<double>::max();
+    double max_x = std::numeric_limits<double>::lowest();
+    double max_y = std::numeric_limits<double>::lowest();
+
+    for (edge track_edge : track_edges)
+    {
+      min_x = std::min({ min_x, track_edge.first.first, track_edge.second.first });
+      min_y = std::min({ min_y, track_edge.first.second, track_edge.second.second });
+
+      max_x = std::max({ max_x, track_edge.first.first, track_edge.second.first });
+      max_y = std::max({ max_y, track_edge.first.second, track_edge.second.second });
+    }
+
+    std::pair<double, double> new_track_size{ max_x - min_x + 1, max_y - min_y + 1 };
+    pixels_per_meter = std::ceil(std::max(track_size.first / new_track_size.first * pixels_per_meter,
+                                          track_size.second / new_track_size.second * pixels_per_meter));
+
+    zero_offset = std::make_pair(new_track_size.first / 2, new_track_size.second / 2); 
+
+    track_size = new_track_size;
+  }
 
   cv::Point Visualizer::world_to_image(std::pair<double, double> point)
   {
