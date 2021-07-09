@@ -44,12 +44,12 @@ namespace visualizer
   class Visualizer
   {
   private:
-    typedef std::pair<std::pair<double, double>, std::pair<double, double>> edge;
+    typedef std::pair<std::pair<double, double>, std::pair<double, double>> Edge;
 
     int pixels_per_meter;
     std::string window_name;
     YAML::Node track;
-    std::vector<edge> track_edges;
+    std::vector<Edge> track_edges;
 
     cv::Mat image;
 

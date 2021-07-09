@@ -23,6 +23,7 @@ namespace visualizer
   void Visualizer::load_track(std::string track_file)
   {
     track = YAML::LoadFile(track_file);
+    track_edges.clear();
     for (std::size_t i = 0; i < track.size(); i++)
     {
       track_edges.push_back(std::make_pair(std::make_pair(track[i][0][0].as<double>(), track[i][0][1].as<double>()),
@@ -42,7 +43,7 @@ namespace visualizer
 
   void Visualizer::draw_track()
   {
-    for (edge track_edge : track_edges)
+    for (Edge track_edge : track_edges)
     {
       cv::line(image, world_to_image(track_edge.first), world_to_image(track_edge.second), cv::Scalar(255, 0, 0));
     }
@@ -78,7 +79,7 @@ namespace visualizer
     double max_x = std::numeric_limits<double>::lowest();
     double max_y = std::numeric_limits<double>::lowest();
 
-    for (edge track_edge : track_edges)
+    for (Edge track_edge : track_edges)
     {
       min_x = std::min({ min_x, track_edge.first.first, track_edge.second.first });
       min_y = std::min({ min_y, track_edge.first.second, track_edge.second.second });
