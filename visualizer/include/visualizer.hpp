@@ -55,6 +55,7 @@ namespace visualizer
 
     void draw();
     void draw_track();
+    void draw_robot_start_position();
     void draw_points();
     void draw_polygons();
 

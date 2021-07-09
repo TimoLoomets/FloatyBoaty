@@ -24,10 +24,10 @@ namespace visualizer
   {
     track = YAML::LoadFile(track_file);
     track_edges.clear();
-    for (std::size_t i = 0; i < track.size(); i++)
+    for (std::size_t i = 0; i < track["edges"].size(); i++)
     {
-      track_edges.push_back(std::make_pair(std::make_pair(track[i][0][0].as<double>(), track[i][0][1].as<double>()),
-                                           std::make_pair(track[i][1][0].as<double>(), track[i][1][1].as<double>())));
+      track_edges.push_back(std::make_pair(std::make_pair(track["edges"][i][0][0].as<double>(), track["edges"][i][0][1].as<double>()),
+                                           std::make_pair(track["edges"][i][1][0].as<double>(), track["edges"][i][1][1].as<double>())));
     }
   }
 
@@ -37,6 +37,7 @@ namespace visualizer
                              static_cast<int>(track_size.second * pixels_per_meter)),
                     CV_8UC3, cv::Scalar(0, 0, 0));
     draw_track();
+    draw_robot_start_position();
     draw_polygons();
     draw_points();
   }
@@ -46,6 +47,24 @@ namespace visualizer
     for (Edge track_edge : track_edges)
     {
       cv::line(image, world_to_image(track_edge.first), world_to_image(track_edge.second), cv::Scalar(255, 0, 0));
+    }
+  }
+
+  void Visualizer::draw_robot_start_position()
+  {
+    if (track["robot_start_position"])
+    {
+      cv::Point robot_pos_on_image =
+          world_to_image(std::make_pair(track["robot_start_position"]["location"][0].as<double>(),
+                                        track["robot_start_position"]["location"][1].as<double>()));
+      double robot_heading = track["robot_start_position"]["heading"].as<double>();
+      cv::Point heading_arrow_end(static_cast<int>(robot_pos_on_image.x + 10 * cos(-robot_heading)),
+                                  static_cast<int>(robot_pos_on_image.y + 10 * sin(-robot_heading)));
+
+      cv::circle(image,
+                 robot_pos_on_image,
+                 3, cv::Scalar(255, 255, 0), -1);
+      cv::arrowedLine(image, robot_pos_on_image, heading_arrow_end, cv::Scalar(255, 255, 0), 1, 8, 0, 0.3);
     }
   }
 

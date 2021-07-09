@@ -129,7 +129,7 @@ void Robot::update_visualisation()
     if (visualisation.motors.find(motor.first) == visualisation.motors.end())
     {
       visualisation.motors[motor.first] =
-          std::make_shared<visualizer::Point>(local_to_global(motor.second.location), cv::Scalar(0, 200, 0), 2);
+          std::make_shared<visualizer::Point>(local_to_global(motor.second.location), cv::Scalar(0, 155, 0), 2);
     }
     visualisation.motors[motor.first]->location = local_to_global(motor.second.location);
   }

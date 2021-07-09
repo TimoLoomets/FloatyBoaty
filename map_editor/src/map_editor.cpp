@@ -79,9 +79,21 @@ namespace map_editor
   void Editor::hover_at(cv::Point location)
   {
     std::pair<double, double> world_loc = visualizer->image_to_world(location);
-    world_loc.first = round(world_loc.first / grid_size) * grid_size;
-    world_loc.second = round(world_loc.second / grid_size) * grid_size;
-    hover_point->location = world_loc;
+
+    hover_point->location =
+        std::make_pair(round(world_loc.first / grid_size) * grid_size, round(world_loc.second / grid_size) * grid_size);
+
+    if (mouse_mode == MouseMode::ROBOT_POSITION)
+    {
+      YAML::Node track = YAML::LoadFile(track_file);
+      track["robot_start_position"]["heading"] =
+          -M_PI_2 - atan2(track["robot_start_position"]["location"][0].as<double>() - world_loc.first,
+                          track["robot_start_position"]["location"][1].as<double>() - world_loc.second);
+      std::ofstream fout(track_file);
+      fout << track;
+      fout.close();
+      visualizer->load_track(track_file);
+    }
     visualizer->display();
   }
 
@@ -117,12 +129,28 @@ namespace map_editor
     }
   }
 
+  void Editor::right_button_down()
+  {
+    YAML::Node track = YAML::LoadFile(track_file);
+    track["robot_start_position"]["location"] =
+        std::vector<double>{ hover_point->location.first, hover_point->location.second };
+    std::ofstream fout(track_file);
+    fout << track;
+    fout.close();
+    mouse_mode = MouseMode::ROBOT_POSITION;
+  }
+
+  void Editor::right_button_up()
+  {
+    mouse_mode = MouseMode::ADD;
+  }
+
   void Editor::add_edge(std::pair<double, double> start_point, std::pair<double, double> end_point)
   {
     std::vector<std::vector<double>> edge = { { start_point.first, start_point.second },
                                               { end_point.first, end_point.second } };
     YAML::Node track = YAML::LoadFile(track_file);
-    track.push_back(edge);
+    track["edges"].push_back(edge);
     std::ofstream fout(track_file);
     fout << track;
     fout.close();
@@ -133,10 +161,12 @@ namespace map_editor
     YAML::Node track = YAML::LoadFile(track_file);
     std::vector<std::pair<std::pair<double, double>, std::pair<double, double>>> track_edges;
     std::set<std::pair<std::pair<double, double>, std::pair<double, double>>> edges_to_delete;
-    for (std::size_t i = 0; i < track.size(); i++)
+    for (std::size_t i = 0; i < track["edges"].size(); i++)
     {
-      std::pair<double, double> edge_start = std::make_pair(track[i][0][0].as<double>(), track[i][0][1].as<double>());
-      std::pair<double, double> edge_stop = std::make_pair(track[i][1][0].as<double>(), track[i][1][1].as<double>());
+      std::pair<double, double> edge_start =
+          std::make_pair(track["edges"][i][0][0].as<double>(), track["edges"][i][0][1].as<double>());
+      std::pair<double, double> edge_stop =
+          std::make_pair(track["edges"][i][1][0].as<double>(), track["edges"][i][1][1].as<double>());
       if (Util::do_intersect(start_point, end_point, edge_start, edge_stop))
       {
         edges_to_delete.insert(std::make_pair(edge_start, edge_stop));
@@ -148,8 +178,10 @@ namespace map_editor
     for (auto edge : track_edges)
     {
       bool add_edge = true;
-      for(auto delete_edge : edges_to_delete){
-        if (edge.first == delete_edge.first && edge.second == delete_edge.second){
+      for (auto delete_edge : edges_to_delete)
+      {
+        if (edge.first == delete_edge.first && edge.second == delete_edge.second)
+        {
           add_edge = false;
           break;
         }
@@ -160,7 +192,8 @@ namespace map_editor
       }
     }
     std::ofstream fout(track_file);
-    fout << edges_to_save;
+    track["edges"] = edges_to_save;
+    fout << track;
     fout.close();
   }
 
@@ -173,7 +206,11 @@ namespace map_editor
     }
     else if (event == cv::EVENT_RBUTTONDOWN)
     {
-      std::cout << "Right button of the mouse is clicked - position (" << x << ", " << y << ")" << std::endl;
+      editor->right_button_down();
+    }
+    else if (event == cv::EVENT_RBUTTONUP)
+    {
+      editor->right_button_up();
     }
     else if (event == cv::EVENT_MBUTTONDOWN)
     {

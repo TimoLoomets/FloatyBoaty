@@ -14,7 +14,8 @@ namespace map_editor
     enum MouseMode
     {
       ADD,
-      DELETE
+      DELETE,
+      ROBOT_POSITION
     };
     MouseMode mouse_mode = MouseMode::ADD;
 
@@ -26,12 +27,15 @@ namespace map_editor
 
     void add_edge(std::pair<double, double> start_point, std::pair<double, double> end_point);
     void cut_edges(std::pair<double, double> start_point, std::pair<double, double> end_point);
+
   public:
     Editor(std::string track_file);
     ~Editor();
 
     void hover_at(cv::Point location);
     void left_click_at(cv::Point location);
+    void right_button_down();
+    void right_button_up();
   };
 
   void ensure_file_exists(const std::string name);
