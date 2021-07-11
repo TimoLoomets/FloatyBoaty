@@ -120,7 +120,7 @@ void Robot::step(double time)
                                  friction_coefficient.angular * center_of_gravity.moment_of_inertia);
 }
 
-std::pair<double, double> Robot::local_to_global(std::pair<double, double> point)
+std::pair<double, double> Robot::local_to_global(std::pair<double, double> point) const
 {
   point = std::make_pair(point.first * cos(position.angular) - point.second * sin(position.angular),
                          point.first * sin(position.angular) + point.second * cos(position.angular));
@@ -152,32 +152,7 @@ void Robot::update_visualisation()
 
   for (auto& sensor : sensors)
   {
-    if (visualisation.sensors.find(sensor.first) == visualisation.sensors.end())
-    {
-      if(sensor.second.type.compare("distance") == 0){
-        //DistanceSensor* distance_sensor = dynamic_cast<DistanceSensor*>(&(sensor.second));
-        visualisation.sensors[sensor.first] = std::make_tuple(
-            std::make_shared<visualizer::Point>(local_to_global(sensor.second.location), cv::Scalar(155, 155, 0), 2),
-            std::make_shared<visualizer::Line>(local_to_global(sensor.second.location), cv::Scalar(155, 155, 0), 1.5,
-                                               sensor.second.heading - sensor.second.detection_angle / 2 +
-                                                   position.angular),
-            std::make_shared<visualizer::Line>(local_to_global(sensor.second.location), cv::Scalar(155, 155, 0), 1.5,
-                                               sensor.second.heading + sensor.second.detection_angle / 2 +
-                                                   position.angular));
-      }
-    }
-    
-    std::get<0>(visualisation.sensors[sensor.first])->location = local_to_global(sensor.second.location);
-    if (sensor.second.type.compare("distance") == 0)
-    {
-      //DistanceSensor* distance_sensor = dynamic_cast<DistanceSensor*>(&(sensor.second));
-      std::get<1>(visualisation.sensors[sensor.first])->location = local_to_global(sensor.second.location);
-      std::get<1>(visualisation.sensors[sensor.first])->heading =
-          sensor.second.heading - sensor.second.detection_angle / 2 + position.angular;
-      std::get<2>(visualisation.sensors[sensor.first])->location = local_to_global(sensor.second.location);
-      std::get<2>(visualisation.sensors[sensor.first])->heading =
-          sensor.second.heading + sensor.second.detection_angle / 2 + position.angular;
-    }
+    sensor.second.update_visualization(this);
   }
 
   visualisation.cog->color = cv::Scalar(0, 255, 255);
@@ -194,16 +169,9 @@ void Robot::add_to_visualizer(visualizer::Visualizer& visualizer)
     visualizer.points.push_back(motor.second);
   }
 
-  for (auto const& sensor : visualisation.sensors)
+  for (auto const& sensor : sensors)
   {
-    visualizer.points.push_back(std::get<0>(sensor.second));
-
-    if(std::get<1>(sensor.second)){
-      visualizer.lines.push_back(std::get<1>(sensor.second));
-    }
-    if(std::get<2>(sensor.second)){
-      visualizer.lines.push_back(std::get<2>(sensor.second));
-    }
+    sensor.second.add_to_visualizer(visualizer);
   }
 
   visualizer.polygons.push_back(visualisation.boundary);
