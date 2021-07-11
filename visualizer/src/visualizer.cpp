@@ -39,6 +39,7 @@ namespace visualizer
     draw_track();
     draw_robot_start_position();
     draw_polygons();
+    draw_lines();
     draw_points();
   }
 
@@ -73,6 +74,14 @@ namespace visualizer
     for (auto point : points)
     {
       cv::circle(image, world_to_image(point->location), point->radius, point->color, -1);
+    }
+  }
+
+  void Visualizer::draw_lines()
+  {
+    for (auto line : lines)
+    {
+      cv::line(image, world_to_image(line->location), world_to_image(line->get_end_point()), line->color);
     }
   }
 

@@ -20,6 +20,22 @@ Robot::Robot(std::string robot_file)
     }
   }
 
+  if (robot["sensors"])
+  {
+    for (YAML::const_iterator it = robot["sensors"].begin(); it != robot["sensors"].end(); ++it)
+    {
+      if (it->second["type"].as<std::string>().compare("distance") == 0)
+      {
+        DistanceSensor sensor(
+            std::make_pair(it->second["location"][0].as<double>() - center_of_gravity.location.first,
+                           it->second["location"][1].as<double>() - center_of_gravity.location.second),
+            it->second["type"].as<std::string>(), it->second["heading"].as<double>(),
+            it->second["detection_angle"].as<double>());
+        sensors.insert({ it->first.as<std::string>(), sensor });
+      }
+    }
+  }
+
   friction_coefficient.linear = std::make_pair(robot["friction_coefficients"]["linear"][0].as<double>(),
                                                robot["friction_coefficients"]["linear"][1].as<double>());
   friction_coefficient.angular = robot["friction_coefficients"]["angular"].as<double>();
@@ -134,6 +150,36 @@ void Robot::update_visualisation()
     visualisation.motors[motor.first]->location = local_to_global(motor.second.location);
   }
 
+  for (auto& sensor : sensors)
+  {
+    if (visualisation.sensors.find(sensor.first) == visualisation.sensors.end())
+    {
+      if(sensor.second.type.compare("distance") == 0){
+        //DistanceSensor* distance_sensor = dynamic_cast<DistanceSensor*>(&(sensor.second));
+        visualisation.sensors[sensor.first] = std::make_tuple(
+            std::make_shared<visualizer::Point>(local_to_global(sensor.second.location), cv::Scalar(155, 155, 0), 2),
+            std::make_shared<visualizer::Line>(local_to_global(sensor.second.location), cv::Scalar(155, 155, 0), 1.5,
+                                               sensor.second.heading - sensor.second.detection_angle / 2 +
+                                                   position.angular),
+            std::make_shared<visualizer::Line>(local_to_global(sensor.second.location), cv::Scalar(155, 155, 0), 1.5,
+                                               sensor.second.heading + sensor.second.detection_angle / 2 +
+                                                   position.angular));
+      }
+    }
+    
+    std::get<0>(visualisation.sensors[sensor.first])->location = local_to_global(sensor.second.location);
+    if (sensor.second.type.compare("distance") == 0)
+    {
+      //DistanceSensor* distance_sensor = dynamic_cast<DistanceSensor*>(&(sensor.second));
+      std::get<1>(visualisation.sensors[sensor.first])->location = local_to_global(sensor.second.location);
+      std::get<1>(visualisation.sensors[sensor.first])->heading =
+          sensor.second.heading - sensor.second.detection_angle / 2 + position.angular;
+      std::get<2>(visualisation.sensors[sensor.first])->location = local_to_global(sensor.second.location);
+      std::get<2>(visualisation.sensors[sensor.first])->heading =
+          sensor.second.heading + sensor.second.detection_angle / 2 + position.angular;
+    }
+  }
+
   visualisation.cog->color = cv::Scalar(0, 255, 255);
   visualisation.cog->radius = 2;
   visualisation.cog->location = local_to_global(center_of_gravity.location);
@@ -146,6 +192,18 @@ void Robot::add_to_visualizer(visualizer::Visualizer& visualizer)
   for (auto const& motor : visualisation.motors)
   {
     visualizer.points.push_back(motor.second);
+  }
+
+  for (auto const& sensor : visualisation.sensors)
+  {
+    visualizer.points.push_back(std::get<0>(sensor.second));
+
+    if(std::get<1>(sensor.second)){
+      visualizer.lines.push_back(std::get<1>(sensor.second));
+    }
+    if(std::get<2>(sensor.second)){
+      visualizer.lines.push_back(std::get<2>(sensor.second));
+    }
   }
 
   visualizer.polygons.push_back(visualisation.boundary);

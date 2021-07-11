@@ -27,6 +27,28 @@ namespace visualizer
     }
   };
 
+  struct Line
+  {
+    std::pair<double, double> location;
+    cv::Scalar color;
+    double length;
+    double heading;
+
+    Line()
+    {
+    }
+
+    Line(std::pair<double, double> location, cv::Scalar color, double length, double heading)
+      : location(location), color(color), length(length), heading(heading)
+    {
+    }
+
+    std::pair<double, double> get_end_point()
+    {
+      return std::make_pair(location.first + length * cos(heading), location.second + length * sin(heading));
+    }
+  };
+
   struct Polygon
   {
     std::vector<std::pair<double, double>> points;
@@ -57,6 +79,7 @@ namespace visualizer
     void draw_track();
     void draw_robot_start_position();
     void draw_points();
+    void draw_lines();
     void draw_polygons();
 
   public:
@@ -64,6 +87,7 @@ namespace visualizer
     ~Visualizer();
 
     std::vector<std::shared_ptr<Point>> points;
+    std::vector<std::shared_ptr<Line>> lines;
     std::vector<std::shared_ptr<Polygon>> polygons;
     std::pair<double, double> track_size = { 14, 14 };
     std::pair<double, double> zero_offset = { 7, 7 };

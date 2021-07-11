@@ -23,6 +23,35 @@ private:
     double heading;
   };
 
+  struct Sensor
+  {
+    Sensor()
+    {
+    }
+
+    Sensor(std::pair<double, double> location, std::string type) : location(location), type(type)
+    {
+    }
+
+    std::pair<double, double> location;
+    std::string type;
+  };
+
+  struct DistanceSensor : Sensor
+  {
+    DistanceSensor()
+    {
+    }
+
+    DistanceSensor(std::pair<double, double> location, std::string type, double heading, double detection_angle)
+      : Sensor(location, type), heading(heading), detection_angle(detection_angle)
+    {
+    }
+
+    double heading;
+    double detection_angle;
+  };
+
   struct CenterOfGravity
   {
     std::pair<double, double> location;
@@ -40,6 +69,8 @@ private:
     std::shared_ptr<visualizer::Polygon> boundary = std::make_shared<visualizer::Polygon>();
     std::shared_ptr<visualizer::Point> cog = std::make_shared<visualizer::Point>();
     std::map<std::string, std::shared_ptr<visualizer::Point>> motors;
+    std::map<std::string, std::tuple<std::shared_ptr<visualizer::Point>, std::shared_ptr<visualizer::Line>,
+        std::shared_ptr<visualizer::Line>>> sensors;
   };
 
   int get_sign(double number)
@@ -67,6 +98,7 @@ public:
 
   CenterOfGravity center_of_gravity;
   std::map<std::string, Motor> motors;
+  std::map<std::string, DistanceSensor> sensors; // TODO: Add some inheritance and stuff to support multiple types of sensors.
   std::vector<std::pair<double, double>> boundary_points;
   AxisComponents friction_coefficient;
   AxisComponents position;
