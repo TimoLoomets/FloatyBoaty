@@ -40,9 +40,12 @@ private:
 
     void update_visualization(const Robot* robot)
     {
-      if(visualisation_point){
+      if (visualisation_point)
+      {
         visualisation_point->location = robot->local_to_global(location);
-      }else{
+      }
+      else
+      {
         visualisation_point =
             std::make_shared<visualizer::Point>(robot->local_to_global(location), cv::Scalar(155, 155, 0), 2);
       }
@@ -166,4 +169,5 @@ public:
   void apply_motor_force(std::string motor, double force);
   void apply_force(std::pair<double, double> location, std::pair<double, double> force);
   void step(double time);
+  std::optional<double> measure_edge_with_sensor(std::string sensor, std::pair<std::pair<double, double>,std::pair<double, double>> edge);
 };

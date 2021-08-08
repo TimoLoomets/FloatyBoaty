@@ -176,3 +176,93 @@ void Robot::add_to_visualizer(visualizer::Visualizer& visualizer)
 
   visualizer.polygons.push_back(visualisation.boundary);
 }
+
+double heading_to_line_min(double m, double b)  // y = m * x + b
+{
+  if (b * m < 0)
+    return atan(-1 / m);
+  else if (b * m > 0)
+    return atan(-1 / m) + M_PI;
+  else if (b > 0)
+    return M_PI_2;
+  else if (b < 0)
+    return -M_PI_2;
+  return atan(-1 / m);
+}
+
+double heading_to_edge_min(std::pair<std::pair<double, double>, std::pair<double, double>> edge)
+{
+  if (edge.first.first == edge.second.first)
+  {
+    return (edge.first.first < 0 ? M_PI : 0) +
+           (edge.first.first < 0 ? -1 : 1) *
+               atan2(fabs(edge.first.second) < fabs(edge.second.second) ? edge.first.second : edge.second.second,
+                     edge.first.first);
+  }
+  else
+  {
+    double m = (edge.first.second == edge.second.second) / (edge.first.first - edge.second.first);
+    double b = edge.first.second - m * edge.first.first;
+    return heading_to_line_min(m, b);
+  }
+}
+
+double normalize_angle(double angle)
+{
+  while (angle > M_PI)
+    angle -= 2 * M_PI;
+  while (angle < -M_PI)
+    angle += 2 * M_PI;
+  return angle;
+}
+
+std::optional<double> Robot::measure_edge_with_sensor(
+    std::string sensor, std::pair<std::pair<double, double>, std::pair<double, double>> edge)
+{
+  std::pair<double, double> sensor_loc = local_to_global(sensors[sensor].location);
+  std::pair<std::pair<double, double>, std::pair<double, double>> local_edge =
+      std::make_pair(std::make_pair(edge.first.first - sensor_loc.first, edge.first.second - sensor_loc.second),
+                     std::make_pair(edge.second.first - sensor_loc.first, edge.second.second - sensor_loc.second));
+
+  double min_edge_heading_in_sensor_space =
+      normalize_angle(atan2(local_edge.first.second, local_edge.first.first) - sensors[sensor].heading);
+  double max_edge_heading_in_sensor_space =
+      normalize_angle(atan2(local_edge.second.second, local_edge.second.first) - sensors[sensor].heading);
+  if (normalize_angle(max_edge_heading_in_sensor_space - min_edge_heading_in_sensor_space) < 0)
+  {
+    std::swap(min_edge_heading_in_sensor_space, max_edge_heading_in_sensor_space);
+  }
+
+  double min_sensor_heading_in_sensor_space = -sensors[sensor].detection_angle / 2;
+  double max_sensor_heading_in_sensor_space = sensors[sensor].detection_angle / 2;
+
+  double min_heading_in_sensor_space = std::max(min_edge_heading_in_sensor_space, min_sensor_heading_in_sensor_space);
+  double max_heading_in_sensor_space = std::min(max_edge_heading_in_sensor_space, max_sensor_heading_in_sensor_space);
+
+  if (min_heading_in_sensor_space > max_heading_in_sensor_space)
+  {
+    return {};
+  }
+
+  double min_distance_heading_in_sensor_space =
+      normalize_angle(heading_to_edge_min(local_edge) - sensors[sensor].heading);
+
+  double distance_heading;
+  if (min_distance_heading_in_sensor_space > max_heading_in_sensor_space)
+  {
+    distance_heading = normalize_angle(max_heading_in_sensor_space + sensors[sensor].heading);
+  }
+  else if (min_distance_heading_in_sensor_space < min_heading_in_sensor_space)
+  {
+    distance_heading = normalize_angle(min_heading_in_sensor_space + sensors[sensor].heading);
+  }
+  else
+  {
+    distance_heading = normalize_angle(min_distance_heading_in_sensor_space + sensors[sensor].heading);
+  }
+
+  double m = (local_edge.first.second == local_edge.second.second) / (local_edge.first.first - local_edge.second.first);
+  double b = local_edge.first.second - m * local_edge.first.first;
+
+  return -b * (m * sin(distance_heading) + cos(distance_heading)) / (m * cos(distance_heading) - sin(distance_heading));
+}
