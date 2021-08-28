@@ -26,12 +26,12 @@ Robot::Robot(std::string robot_file)
     {
       if (it->second["type"].as<std::string>().compare("distance") == 0)
       {
-        DistanceSensor sensor(
-            std::make_pair(it->second["location"][0].as<double>() - center_of_gravity.location.first,
-                           it->second["location"][1].as<double>() - center_of_gravity.location.second),
-            it->second["type"].as<std::string>(), it->second["heading"].as<double>(),
-            it->second["detection_angle"].as<double>());
-        sensors.insert({ it->first.as<std::string>(), sensor });
+        sensors.insert({ it->first.as<std::string>(),
+                         std::make_unique<DistanceSensor>(
+                             std::make_pair(it->second["location"][0].as<double>() - center_of_gravity.location.first,
+                                            it->second["location"][1].as<double>() - center_of_gravity.location.second),
+                             it->second["type"].as<std::string>(), it->second["heading"].as<double>(),
+                             it->second["detection_angle"].as<double>()) });
       }
     }
   }
@@ -152,7 +152,7 @@ void Robot::update_visualisation()
 
   for (auto& sensor : sensors)
   {
-    sensor.second.update_visualization(this);
+    sensor.second->update_visualization(this);
   }
 
   visualisation.cog->color = cv::Scalar(0, 255, 255);
@@ -171,7 +171,7 @@ void Robot::add_to_visualizer(visualizer::Visualizer& visualizer)
 
   for (auto const& sensor : sensors)
   {
-    sensor.second.add_to_visualizer(visualizer);
+    sensor.second->add_to_visualizer(visualizer);
   }
 
   visualizer.polygons.push_back(visualisation.boundary);
@@ -217,24 +217,25 @@ double normalize_angle(double angle)
 }
 
 std::optional<double> Robot::measure_edge_with_sensor(
-    std::string sensor, std::pair<std::pair<double, double>, std::pair<double, double>> edge)
+    std::string sensor_name, std::pair<std::pair<double, double>, std::pair<double, double>> edge)
 {
-  std::pair<double, double> sensor_loc = local_to_global(sensors[sensor].location);
+  DistanceSensor* sensor = dynamic_cast<DistanceSensor*>(sensors[sensor_name].get());
+  std::pair<double, double> sensor_loc = local_to_global(sensor->location);
   std::pair<std::pair<double, double>, std::pair<double, double>> local_edge =
       std::make_pair(std::make_pair(edge.first.first - sensor_loc.first, edge.first.second - sensor_loc.second),
                      std::make_pair(edge.second.first - sensor_loc.first, edge.second.second - sensor_loc.second));
 
   double min_edge_heading_in_sensor_space =
-      normalize_angle(atan2(local_edge.first.second, local_edge.first.first) - sensors[sensor].heading);
+      normalize_angle(atan2(local_edge.first.second, local_edge.first.first) - sensor->heading);
   double max_edge_heading_in_sensor_space =
-      normalize_angle(atan2(local_edge.second.second, local_edge.second.first) - sensors[sensor].heading);
+      normalize_angle(atan2(local_edge.second.second, local_edge.second.first) - sensor->heading);
   if (normalize_angle(max_edge_heading_in_sensor_space - min_edge_heading_in_sensor_space) < 0)
   {
     std::swap(min_edge_heading_in_sensor_space, max_edge_heading_in_sensor_space);
   }
 
-  double min_sensor_heading_in_sensor_space = -sensors[sensor].detection_angle / 2;
-  double max_sensor_heading_in_sensor_space = sensors[sensor].detection_angle / 2;
+  double min_sensor_heading_in_sensor_space = -sensor->detection_angle / 2;
+  double max_sensor_heading_in_sensor_space = sensor->detection_angle / 2;
 
   double min_heading_in_sensor_space = std::max(min_edge_heading_in_sensor_space, min_sensor_heading_in_sensor_space);
   double max_heading_in_sensor_space = std::min(max_edge_heading_in_sensor_space, max_sensor_heading_in_sensor_space);
@@ -244,21 +245,20 @@ std::optional<double> Robot::measure_edge_with_sensor(
     return {};
   }
 
-  double min_distance_heading_in_sensor_space =
-      normalize_angle(heading_to_edge_min(local_edge) - sensors[sensor].heading);
+  double min_distance_heading_in_sensor_space = normalize_angle(heading_to_edge_min(local_edge) - sensor->heading);
 
   double distance_heading;
   if (min_distance_heading_in_sensor_space > max_heading_in_sensor_space)
   {
-    distance_heading = normalize_angle(max_heading_in_sensor_space + sensors[sensor].heading);
+    distance_heading = normalize_angle(max_heading_in_sensor_space + sensor->heading);
   }
   else if (min_distance_heading_in_sensor_space < min_heading_in_sensor_space)
   {
-    distance_heading = normalize_angle(min_heading_in_sensor_space + sensors[sensor].heading);
+    distance_heading = normalize_angle(min_heading_in_sensor_space + sensor->heading);
   }
   else
   {
-    distance_heading = normalize_angle(min_distance_heading_in_sensor_space + sensors[sensor].heading);
+    distance_heading = normalize_angle(min_distance_heading_in_sensor_space + sensor->heading);
   }
 
   double m = (local_edge.first.second == local_edge.second.second) / (local_edge.first.first - local_edge.second.first);

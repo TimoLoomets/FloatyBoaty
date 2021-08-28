@@ -38,7 +38,7 @@ private:
     {
     }
 
-    void update_visualization(const Robot* robot)
+    virtual void update_visualization(const Robot* robot)
     {
       if (visualisation_point)
       {
@@ -51,7 +51,7 @@ private:
       }
     }
 
-    void add_to_visualizer(visualizer::Visualizer& visualizer) const
+    virtual void add_to_visualizer(visualizer::Visualizer& visualizer) const
     {
       visualizer.points.push_back(visualisation_point);
     }
@@ -72,7 +72,7 @@ private:
     {
     }
 
-    void update_visualization(const Robot* robot)
+    void update_visualization(const Robot* robot) override
     {
       Sensor::update_visualization(robot);
       if (visualisation_left_edge)
@@ -99,7 +99,7 @@ private:
       }
     }
 
-    void add_to_visualizer(visualizer::Visualizer& visualizer) const
+    void add_to_visualizer(visualizer::Visualizer& visualizer) const override
     {
       Sensor::add_to_visualizer(visualizer);
       visualizer.lines.push_back(visualisation_left_edge);
@@ -155,8 +155,7 @@ public:
 
   CenterOfGravity center_of_gravity;
   std::map<std::string, Motor> motors;
-  std::map<std::string, DistanceSensor> sensors;  // TODO: Add some inheritance and stuff to support multiple types of
-                                                  // sensors.
+  std::map<std::string, std::unique_ptr<Sensor>> sensors;
   std::vector<std::pair<double, double>> boundary_points;
   AxisComponents friction_coefficient;
   AxisComponents position;
@@ -169,5 +168,6 @@ public:
   void apply_motor_force(std::string motor, double force);
   void apply_force(std::pair<double, double> location, std::pair<double, double> force);
   void step(double time);
-  std::optional<double> measure_edge_with_sensor(std::string sensor, std::pair<std::pair<double, double>,std::pair<double, double>> edge);
+  std::optional<double> measure_edge_with_sensor(std::string sensor_name,
+                                                 std::pair<std::pair<double, double>, std::pair<double, double>> edge);
 };
